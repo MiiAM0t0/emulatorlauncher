@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
+using System.Linq;
 using EmulatorLauncher.Common;
 using EmulatorLauncher.Common.FileFormats;
+using System;
 
 namespace EmulatorLauncher
 {
@@ -37,18 +39,46 @@ namespace EmulatorLauncher
 
             if (!File.Exists(exe))
                 return null;
-			
-			string romdir = Path.GetDirectoryName(rom);
-			
-			if (Path.GetExtension(rom).ToLower() == ".m3u" || Path.GetExtension(rom).ToLower() == ".xbox360")
+
+            // Check if the ROM is compressed and needs to be extracted
+            if (Path.GetExtension(rom).ToLowerInvariant() == ".zip" || Path.GetExtension(rom).ToLowerInvariant() == ".7z" || Path.GetExtension(rom).ToLowerInvariant() == ".squashfs")
+            {
+                string uncompressedRomPath = this.TryUnZipGameIfNeeded(system, rom, false, false);
+                if (Directory.Exists(uncompressedRomPath))
+                {
+                    string[] extensions = new string[] { ".iso", ".xex" };
+                    string[] romFiles = Directory.GetFiles(uncompressedRomPath, "*.*", SearchOption.AllDirectories)
+                        .OrderBy(file => Array.IndexOf(extensions, Path.GetExtension(file).ToLowerInvariant()))
+                        .ToArray();
+                    rom = romFiles.FirstOrDefault(file => extensions.Any(ext => Path.GetExtension(file).Equals(ext, StringComparison.OrdinalIgnoreCase)));
+
+                    // Check for XBLA titles in specific folder structure
+                    if (rom == null)
+                    {
+                        string xblaPath = Path.Combine(uncompressedRomPath, "0000000000000000");
+                        if (Directory.Exists(xblaPath))
+                        {
+                            string[] xblaFiles = Directory.GetFiles(xblaPath, "*.*", SearchOption.AllDirectories)
+                                .Where(file => Path.GetFileName(file).Length == 40) // XBLA files typically have 40-character filenames
+                                .ToArray();
+                            rom = xblaFiles.FirstOrDefault();
+                        }
+                    }
+
+                    ValidateUncompressedGame();
+                }
+            }
+
+            if (Path.GetExtension(rom).ToLower() == ".m3u" || Path.GetExtension(rom).ToLower() == ".xbox360")
             {
                 SimpleLogger.Instance.Info("[INFO] game file is .m3u, reading content of file.");
+                string romdir = Path.GetDirectoryName(rom);
                 rom = File.ReadAllText(rom);
                 rom = Path.Combine(romdir, rom.Substring(1));
                 SimpleLogger.Instance.Info("[INFO] path to rom : " + (rom != null ? rom : "null"));
             }
 
-            bool fullscreen = !IsEmulationStationWindowed() || SystemConfig.getOptBoolean("forcefullscreen");
+                    bool fullscreen = !IsEmulationStationWindowed() || SystemConfig.getOptBoolean("forcefullscreen");
 
             SetupConfiguration(path);
 
