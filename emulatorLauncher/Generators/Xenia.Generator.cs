@@ -46,7 +46,7 @@ namespace EmulatorLauncher
                 string uncompressedRomPath = this.TryUnZipGameIfNeeded(system, rom, false, false);
                 if (Directory.Exists(uncompressedRomPath))
                 {
-                    string[] extensions = new string[] { ".iso", ".xex" };
+                    string[] extensions = new string[] { ".iso", ".xex", ".zar" };
                     string[] romFiles = Directory.GetFiles(uncompressedRomPath, "*.*", SearchOption.AllDirectories)
                         .OrderBy(file => Array.IndexOf(extensions, Path.GetExtension(file).ToLowerInvariant()))
                         .ToArray();
@@ -78,7 +78,7 @@ namespace EmulatorLauncher
                 SimpleLogger.Instance.Info("[INFO] path to rom : " + (rom != null ? rom : "null"));
             }
 
-                    bool fullscreen = !IsEmulationStationWindowed() || SystemConfig.getOptBoolean("forcefullscreen");
+            bool fullscreen = !IsEmulationStationWindowed() || SystemConfig.getOptBoolean("forcefullscreen");
 
             SetupConfiguration(path);
 
@@ -219,7 +219,7 @@ namespace EmulatorLauncher
                         ini.AppendValue("GPU", "draw_resolution_scale_x", "1");
                         ini.AppendValue("GPU", "draw_resolution_scale_y", "1");
                     }
-                    
+
                     if (_canary)
                     {
                         if (SystemConfig.isOptSet("xenia_internal_display_resolution") && !string.IsNullOrEmpty(SystemConfig["xenia_internal_display_resolution"]))
@@ -343,6 +343,6 @@ namespace EmulatorLauncher
                 }
             }
             catch { }
-         }
+        }
     }
 }
