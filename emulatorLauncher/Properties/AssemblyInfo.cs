@@ -1,15 +1,15 @@
-﻿using System.Reflection;
+﻿using System.Reflection; 
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("emulatorLauncher")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("emulatorLauncher_decompression_work")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("FCA")]
 [assembly: AssemblyProduct("emulatorLauncher")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyCopyright("Copyright © MiiAM0t0 2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
