@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using EmulatorLauncher.Common;
 using EmulatorLauncher.Common.FileFormats;
+using System.Linq;
 
 namespace EmulatorLauncher
 {
@@ -38,7 +40,7 @@ namespace EmulatorLauncher
             _fullscreen = !IsEmulationStationWindowed() || SystemConfig.getOptBoolean("forcefullscreen");
             bool wide = SystemConfig.isOptSet("flycast_ratio") && SystemConfig["flycast_ratio"] != "normal";
 
-            //Applying bezels
+            // Applying bezels
             if (_fullscreen && !wide)
                 _bezelFileInfo = BezelFiles.GetBezelFiles(system, rom, resolution, emulator);
 
@@ -56,6 +58,9 @@ namespace EmulatorLauncher
             else
                 _saveStatesWatcher = null;
 
+            // Decompression Logic
+            rom = HandleDecompression(rom, system);
+
             SetupConfiguration(path, system, resolution);
 
             List<string> commandArray = new List<string>
@@ -71,6 +76,31 @@ namespace EmulatorLauncher
                 WorkingDirectory = path,
                 Arguments = args,
             };
+        }
+
+        private string HandleDecompression(string rom, string system)
+        {
+            string[] compressedExtensions = new string[] { ".zip", ".7z", ".squashfs" };
+            string[] gameExtensions = new string[] { ".mds", ".mdf", ".cue", ".cdi", ".gdi", ".chd" };
+
+            // Check if the ROM is compressed and needs to be extracted
+            if (compressedExtensions.Contains(Path.GetExtension(rom).ToLowerInvariant()))
+            {
+                string uncompressedRomPath = this.TryUnZipGameIfNeeded(system, rom, false, false);
+                if (Directory.Exists(uncompressedRomPath))
+                {
+                    // Search for valid game files after extraction
+                    string[] romFiles = Directory.GetFiles(uncompressedRomPath, "*.*", SearchOption.AllDirectories)
+                        .OrderBy(file => Array.IndexOf(gameExtensions, Path.GetExtension(file).ToLowerInvariant()))
+                        .ToArray();
+
+                    rom = romFiles.FirstOrDefault(file => gameExtensions.Any(ext => Path.GetExtension(file).Equals(ext, StringComparison.OrdinalIgnoreCase)));
+
+                    ValidateUncompressedGame();
+                }
+            }
+
+            return rom;
         }
 
         //Configuration file emu.cfg
